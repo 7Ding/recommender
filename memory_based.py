@@ -32,7 +32,7 @@ item_similarity_df = pd.DataFrame(item_similarity, index=user_item_matrix.column
 # Recommendations based on books rated by a user. Recommending 10 books
 def book_recommend (user_id, recommend_num):
     try:
-        # 특정 사용자의 책 평가 정보 불러오기
+        # Load raitng of data (specific user)
         user_ratings = user_item_matrix.loc[user_id]
         similar_items = item_similarity_df.dot(user_ratings).sort_values(ascending=False)
 
@@ -48,7 +48,7 @@ def book_recommend (user_id, recommend_num):
         return pd.DataFrame()
 
    
-# 프로그램 사용자 id 입력 함수
+# Type user_id and type the number of books
 def get_user_id():
     try:
         input_id = int(input("Please type the user ID (num) : "))
