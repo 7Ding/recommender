@@ -4,6 +4,7 @@ import pandas as pd
 # read csv file
 # ISO-8859-1 : Europe characters incoding
 df = pd.read_csv('ProcessedData2.csv', encoding='ISO-8859-1')
+print(df.head())
 
 # Delete data, if data in preprocessed data "Rating" has value '0'
 # Normalization Rating 1~10 to 1~5
@@ -49,43 +50,55 @@ item_similarity = cosine_similarity(user_item_matrix.T)
 item_similarity_df = pd.DataFrame(item_similarity, index=user_item_matrix.columns, columns=user_item_matrix.columns)
 
 # Recommendation function to user
-def recommend_books(user_id, num_recommendations=15):
-    if user_id not in user_item_matrix.index:
+def book_recommend(user_id, num_recommendations=15):
+        
+    try: 
+        # Loading the information of user rating (user_id) / similar_items : Find similar items
+        user_ratings = user_item_matrix.loc[user_id]  
+        similar_items = item_similarity_df.dot(user_ratings).sort_values(ascending=False)  
+        
+        # If there is any book that user_id user already rated, except that book
+        recommendations = similar_items.index[~similar_items.index.isin(user_ratings[user_ratings > 0].index)]  
+        # Top n Recommendations   n: changeable
+        recommended_indices = recommendations[:num_recommendations]  
+    
+        # Information to display in the recommendation list : Book Title, Author, Year, Publisher
+        book_recommend = df[df['book_id'].isin(recommended_indices)][['Title', 'Author', 'Year', 'Publisher']]
+    
+        return book_recommend.reset_index(drop=True)
+    
+    except:
         print(f"User {user_id} is not exist in dataset")
         return pd.DataFrame()
 
-    # Loading the information of user rating (user_id) / similar_items : Find similar items
-    user_ratings = user_item_matrix.loc[user_id]  
-    similar_items = item_similarity_df.dot(user_ratings).sort_values(ascending=False)  
-    # If there is any book that user_id user already rated, except that book
-    recommendations = similar_items.index[~similar_items.index.isin(user_ratings[user_ratings > 0].index)]  
-    # Top n Recommendations   n: changeable
-    recommended_indices = recommendations[:num_recommendations]  
-    
-    # Information to display in the recommendation list : Book Title, Author, Year, Publisher
-    recommended_books = df[df['book_id'].isin(recommended_indices)][['Title', 'Author', 'Year', 'Publisher']]
-    
-    return recommended_books.reset_index(drop=True)
 
 # Checking whether modeling was successful
 # Random user
 random_user_id = train_df['user_id'].sample(1).iloc[0]
-recommended_books_output = recommend_books(user_id=random_user_id, num_recommendations=15)
+recommended_books_output = book_recommend(user_id=random_user_id, num_recommendations=15)
 print("\nRecommendation books list : ")
 print(recommended_books_output)
 
 # modeling test using test dataset 
-def test_recommendation(test_user_id):
+def recommendation_test(test_user_id):
     if test_user_id not in user_item_matrix.index:
         print(f"Input for testing {test_user_id} is not exist.")
         return
     
     # Recommendation 
-    recommended_books_output = recommend_books(user_id=test_user_id, num_recommendations=15)
+    recommended_books_output = book_recommend(user_id=test_user_id, num_recommendations=15)
     
     print(f"\nRecommended books for {test_user_id}:")
     print(recommended_books_output)
 
 # Recommendation for random test user
-random_test_user = test_df['user_id'].sample(1).iloc[0]
-test_recommendation(test_user_id=random_test_user)
+def repeat_test(test_num):
+    input_recommend_num = int(input("Please type number of recommendation book : "))
+    for i in range(test_num):
+        random_test_user = test_df['user_id'].sample(1).iloc[0]
+
+        print("Test {1+1} : book list for {random_test_user}")
+        recommendation_test(random_test_user, input_recommend_num)
+
+input_num = int(input("Please type the number to loop: "))
+repeat_test(input_num)
